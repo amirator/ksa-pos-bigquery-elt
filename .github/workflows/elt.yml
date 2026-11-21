@@ -93,6 +93,9 @@ jobs:
     needs: [local-duckdb, check-secret]
     if: needs.check-secret.outputs.has_key == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    concurrency:            # never let two runs rebuild the same BigQuery datasets at once
+      group: bigquery-cloud
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6

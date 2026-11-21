@@ -1,6 +1,6 @@
-# KSA POS cloud ELT: SAMA weekly card spending → BigQuery-ready warehouse with dbt
+# KSA POS cloud ELT: SAMA weekly card spending → Google BigQuery (sandbox) with dbt
 
-> **Status: BigQuery-ready; cloud deploy pending account setup.** The full pipeline runs end to end on a local **DuckDB** warehouse and, in CI, on the open-source **BigQuery emulator** (same loader, same dbt models, BigQuery SQL dialect), and both engines return identical results. It has **not yet run on real Google BigQuery**: that needs a free BigQuery-sandbox project and one GitHub secret, set up by the owner (steps [below](#go-live-on-bigquery-free-sandbox-no-card)). Until then the cloud job in CI is skipped on purpose.
+> **Status: Live on Google BigQuery (sandbox), refreshed weekly.** GitHub Actions loads the data into the free BigQuery sandbox project `ksa-pos-elt` (location US), builds the dbt models and runs all 39 dbt tests there. Every Monday it refreshes the data, and a parity test confirms that the 5 views on BigQuery match the local DuckDB build. Evidence comes from real API queries in [`docs/bigquery/evidence.md`](docs/bigquery/evidence.md), and the real job log is in [`docs/run_logs/bigquery_ci_run.txt`](docs/run_logs/bigquery_ci_run.txt) (run [44907380956](https://github.com/amirator/ksa-pos-bigquery-elt/actions/runs/44907380956)). The same pipeline also runs locally on DuckDB and in CI on the open-source BigQuery emulator, with no account needed.
 
 **Business question:** *How fast is card spending at Saudi points of sale still growing, where is it going (cities, ticket size), and how big is the Ramadan/Eid swing? And can a team get those answers refreshed every week from a cloud warehouse instead of a manual spreadsheet?*
 
@@ -45,9 +45,14 @@ KAPSARC public API ──► Python loader ──────────► raw
 | Load | One **warehouse adapter** (`DuckDBWarehouse` / `BigQueryWarehouse`) chosen by the `WAREHOUSE` env var. Unchanged files are skipped by hash; every attempt, including failures, is appended to `pos_raw.load_log`; a failed source does not stop the others but fails the run. Builds a Hijri (Umm al-Qura) week calendar with Ramadan/Eid flags. | `src/pos_elt/warehouse.py`, `load.py`, `calendar.py` |
 | Transform | dbt project with three targets (`duckdb`, `bq_emulator`, `bigquery`). Portable SQL; the few dialect differences (day-of-week, date arithmetic) are adapter-dispatched macros. | `dbt/` |
 | Serve | 5 views in `pos_reporting`: **`vw_weekly_kpis`** (value, volume, avg ticket, 4-week avg, WoW, vs 52 weeks ago), **`vw_yearly_avg_ticket`**, **`vw_city_share`**, **`vw_ramadan_eid_lift`**, **`vw_latest_vs_prior_year`**. | `dbt/models/reporting/` |
-| Schedule | GitHub Actions cron every Monday 04:00 UTC (07:00 Riyadh): re-downloads SAMA data and rebuilds; the BigQuery job runs only when the `GCP_SA_KEY` secret exists. | `.github/workflows/elt.yml` |
+| Schedule | GitHub Actions cron every Monday 04:00 UTC (07:00 Riyadh): re-downloads SAMA data and rebuilds DuckDB, the emulator and **Google BigQuery** (the cloud job runs when the `GCP_SA_KEY` secret exists, one at a time). | `.github/workflows/elt.yml` |
 
-**Built for the free BigQuery sandbox.** The sandbox needs no card but allows no DML (`INSERT/UPDATE/DELETE/MERGE`) or streaming, and tables expire after 60 days. So every write is a **load job** (`WRITE_TRUNCATE` / `WRITE_APPEND`), dbt uses only `table` and `view` materialisations (DDL), and a test fails the build if anyone adds DML or an incremental model. The weekly job re-creates expired tables (a raw table that has expired is reloaded even if the file hash is unchanged).
+**Built for the free BigQuery sandbox.** The sandbox needs no card, but it allows no DML (`INSERT/UPDATE/DELETE/MERGE`) and no streaming, and every table expires after 60 days. So the pipeline handles it like this:
+- **Writes:** every write is a **load job** (`WRITE_TRUNCATE` / `WRITE_APPEND`), and dbt uses only `table` and `view` materialisations (DDL). A test fails the build if anyone adds DML or an incremental model.
+- **Expiry:** tables that dbt re-creates get a fresh 60 days on every run. Raw tables skipped as unchanged, and the append-only `load_log`, get their expiry moved to now + 59 days. Setting it beyond 60 days is refused without billing (HTTP 403, tested).
+- **Go-live fix:** the first real run showed that BigQuery reserves column names starting with `_FILE_`, so the raw lineage columns are `src_file_sha256` and `loaded_at`. The failed attempt is still recorded in `pos_raw.load_log`.
+
+![BigQuery job log](docs/img/bigquery_ci_run.png)
 
 ## Tests and checks
 
@@ -58,27 +63,28 @@ KAPSARC public API ──► Python loader ──────────► raw
   * named cities never exceed 100% of the national total.
 * **Source freshness** on `loaded_at` (warn after 8 days, error after 35).
 * **pytest**: adapter switching, Hijri calendar flags, CSV parsing with BOM and unknown-indicator rejection, loader hash-skip / reload / failure logging, sandbox no-DML guard, CI gating, README-vs-`kpis.json` drift test, and a **cross-repo reconciliation**: the KPIs must equal those published by [ksa-pos-spending-dashboard](https://github.com/amirator/ksa-pos-spending-dashboard), which built the same numbers with hand-written DuckDB SQL.
-* **BigQuery parity (CI)**: the `bigquery-emulator` job runs the identical pipeline against [goccy/bigquery-emulator](https://github.com/goccy/bigquery-emulator) v0.8.1 (checksum-verified) and asserts all 5 views equal the DuckDB views. Real log: [`docs/run_logs/bq_emulator_run.txt`](docs/run_logs/bq_emulator_run.txt).
+* **BigQuery parity (CI):** the `bigquery-cloud` job runs on **real Google BigQuery**, and the `bigquery-emulator` job runs against [goccy/bigquery-emulator](https://github.com/goccy/bigquery-emulator) v0.8.1 (checksum-verified). Each job checks that all 5 views equal the DuckDB views. Real logs: [`bigquery_ci_run.txt`](docs/run_logs/bigquery_ci_run.txt), [`bq_emulator_run.txt`](docs/run_logs/bq_emulator_run.txt).
+* **Evidence script:** after each cloud run, `scripts/bq_evidence.py` queries BigQuery for dataset location and expiry, row counts of all 14 tables/views, the load log and the latest `vw_weekly_kpis` rows (below; [Markdown](docs/bigquery/evidence.md)).
+
+![BigQuery evidence](docs/img/bigquery_evidence.png)
 
 ![BigQuery emulator run](docs/img/bq_emulator_run.png)
 
-## Go live on BigQuery (free sandbox, no card)
+## How the BigQuery connection is set up (free sandbox, no card)
 
-These steps need the repository owner's own Google account, so they have not been done yet. Nothing here costs money: the sandbox has no billing account, 10 GiB storage and 1 TiB of queries a month free (this project uses a few MB).
+This is already done for project `ksa-pos-elt`. Follow these steps to reproduce it in another project:
 
-1. Go to <https://console.cloud.google.com/bigquery>, sign in with a Google account, accept the terms and **create a project** (e.g. `ksa-pos-elt`). Do **not** add a billing account; the page should show the "sandbox" banner. Note the **project ID**.
-2. In **IAM & Admin → Service accounts**, create a service account `pos-elt-ci` and grant it two roles on the project: **BigQuery Data Editor** and **BigQuery Job User**.
-3. Open the service account → **Keys → Add key → Create new key → JSON**. A `.json` file downloads. Treat it like a password and never commit it.
-4. In GitHub: **amirator/ksa-pos-bigquery-elt → Settings → Secrets and variables → Actions → New repository secret**, name **`GCP_SA_KEY`**, and paste the whole JSON file. (Optional **variables**: `BQ_PROJECT` if it differs from the key's project, `BQ_LOCATION` if you do not want `US`.)
-5. **Actions → elt → Run workflow**. The `bigquery-cloud` job now runs: it creates datasets `pos_raw`, `pos_staging`, `pos_marts`, `pos_reporting`, loads the data, builds and tests the dbt models, and uploads the view exports as an artifact. After that it repeats every Monday.
-6. Check it in the BigQuery console (`pos_reporting.vw_weekly_kpis` → Preview). Only then change the status line at the top of this README.
+1. At <https://console.cloud.google.com/bigquery>, create a project **without** a billing account. The page shows the "sandbox" banner.
+2. Create a service account with **BigQuery Data Editor** and **BigQuery Job User** on the project, and download a JSON key. Never commit the key.
+3. Add the key in GitHub as the repository secret **`GCP_SA_KEY`**. Set the repository variables **`BQ_PROJECT`** (here `ksa-pos-elt`) and **`BQ_LOCATION`** (here `US`).
+4. Go to **Actions → elt → Run workflow**. Tick `force_load` to reload raw tables even when the SAMA files haven't changed.
 
 Run it locally against BigQuery instead of CI:
 ```bash
 export WAREHOUSE=bigquery BQ_PROJECT=<project-id> GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
 PYTHONPATH=src python -m pos_elt.pipeline --offline
 ```
-Optional hardening: replace the JSON key with keyless Workload Identity Federation (`google-github-actions/auth` supports both).
+Possible hardening: replace the JSON key with keyless Workload Identity Federation (`google-github-actions/auth` supports both).
 
 ## Data
 
@@ -91,10 +97,10 @@ A snapshot of both CSVs is committed in `data/raw/` (with hashes in `manifest.js
 
 ## Limitations
 
-* **Not yet run on real BigQuery** (see status). Correctness of the BigQuery SQL is shown on the emulator, which implements the BigQuery API and GoogleSQL on SQLite; it is close to, but not identical to, the real service. On the emulator two small shims are applied (in `src/pos_elt/dbt_runner.py`, emulator target only), and 6 join-heavy tests (3 reconciliation, 3 relationships) are skipped there because the emulator is very slow on un-indexed joins; they run on DuckDB and will run on BigQuery.
+* **Free sandbox, not a production setup:** it has a 10 GiB lifetime storage cap and 60-day table expiry (handled above), and it is a single-person project with a service-account key rather than keyless auth. The emulator used in CI is close to real BigQuery but not identical. It needs two small shims (`src/pos_elt/dbt_runner.py`, emulator target only), and the 6 join-heavy tests are skipped on it; they run on DuckDB and on real BigQuery.
 * **Data lag:** the KAPSARC mirror ends at the week of 2026-03-22, so a weekly refresh only picks up new weeks when KAPSARC publishes them.
 * **Scope:** card POS terminals only; cash and e-commerce are not included. Sector trends are not modelled here (release B changed the sector taxonomy); city and national series are stitched A→B.
-* Sandbox tables expire after 60 days; the weekly job re-creates them. GitHub disables cron on repos with no activity for 60 days.
+* GitHub disables cron on repos with no activity for 60 days. If that happens, re-enable the workflow. The BigQuery tables would then expire within about 60 days of the last run.
 * Personal portfolio project on public data; not affiliated with SAMA or KAPSARC.
 
 ## What I borrowed (reference repos studied)

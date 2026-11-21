@@ -1,6 +1,6 @@
 # Real Google BigQuery evidence: project `ksa-pos-elt`
 
-Queried through the BigQuery API by `scripts/bq_evidence.py` at 2026-11-21 13:07 UTC. Nothing in this file is typed by hand.
+Queried through the BigQuery API by `scripts/bq_evidence.py` at 2026-11-21 13:11 UTC. Nothing in this file is typed by hand.
 
 ## Datasets
 
@@ -16,7 +16,7 @@ Queried through the BigQuery API by `scripts/bq_evidence.py` at 2026-11-21 13:07
 | object | type | rows | expires |
 |---|---|---|---|
 | pos_raw.hijri_calendar | TABLE | 417 | 2027-01-20 |
-| pos_raw.load_log | TABLE | 15 | 2027-01-19 |
+| pos_raw.load_log | TABLE | 21 | 2027-01-19 |
 | pos_raw.sama_pos_a | TABLE | 31262 | 2027-01-19 |
 | pos_raw.sama_pos_b | TABLE | 14168 | 2027-01-19 |
 | pos_staging.stg_sama_pos | TABLE | 11418 | 2027-01-20 |
@@ -34,15 +34,15 @@ Queried through the BigQuery API by `scripts/bq_evidence.py` at 2026-11-21 13:07
 
 | source_key | status | rows_loaded | finished_utc |
 |---|---|---|---|
+| calendar | loaded | 417 | 2026-11-21 13:10 |
+| pos_b | loaded | 14168 | 2026-11-21 13:10 |
+| calendar | loaded | 417 | 2026-11-21 13:10 |
+| pos_a | loaded | 31262 | 2026-11-21 13:10 |
+| pos_b | skipped_unchanged | 0 | 2026-11-21 13:10 |
+| pos_a | skipped_unchanged | 0 | 2026-11-21 13:10 |
 | calendar | loaded | 417 | 2026-11-21 13:06 |
 | pos_b | skipped_unchanged | 0 | 2026-11-21 13:06 |
 | pos_a | skipped_unchanged | 0 | 2026-11-21 13:06 |
-| calendar | loaded | 417 | 2026-11-21 13:03 |
-| pos_b | skipped_unchanged | 0 | 2026-11-21 13:02 |
-| pos_a | skipped_unchanged | 0 | 2026-11-21 13:02 |
-| calendar | loaded | 417 | 2026-11-21 12:59 |
-| pos_b | skipped_unchanged | 0 | 2026-11-21 12:59 |
-| pos_a | skipped_unchanged | 0 | 2026-11-21 12:59 |
 
 ## Sample: `pos_reporting.vw_weekly_kpis` (latest 8 weeks)
 

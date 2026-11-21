@@ -48,9 +48,14 @@ def test_readme_numbers_match_kpis(path):
     assert s in README, f"README is out of date: {path} = {s} not found"
 
 
-def test_readme_is_honest_about_cloud_status():
-    assert "BigQuery-ready" in README
-    assert not re.search(r"(?i)\b(is|now) (live|deployed) (on|to) BigQuery\b", README)
+def test_readme_cloud_claim_is_backed_by_evidence():
+    """The README may say 'Live on Google BigQuery' only with committed evidence from a real run."""
+    assert "Live on Google BigQuery (sandbox), refreshed weekly" in README
+    ev = (ROOT / "docs" / "bigquery" / "evidence.md").read_text()
+    assert "Queried through the BigQuery API" in ev and "pos_reporting.vw_weekly_kpis | VIEW | 307" in ev
+    assert "pos_raw.sama_pos_a | TABLE | 31262" in ev
+    log = (ROOT / "docs" / "run_logs" / "bigquery_ci_run.txt").read_text()
+    assert "dbt_target=bigquery" in log and "PASS=49" in log and "ERROR=0" in log
 
 
 @pytest.mark.parametrize("view", ["vw_weekly_kpis", "vw_yearly_avg_ticket", "vw_city_share",
