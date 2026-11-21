@@ -1,0 +1,20 @@
+version: 2
+models:
+  - name: stg_sama_pos
+    description: "Both SAMA releases, harmonised names, Sunday week starts, wide metrics (SAR thousands / thousands)."
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination: [source, week_start, sector, city]
+    columns:
+      - name: source
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['A', 'B']}
+      - name: week_start
+        data_tests: [not_null, is_sunday]
+      - name: source_rows
+        description: "Raw indicator rows behind this row; >4 would mean duplicate source records."
+        data_tests:
+          - value_between:
+              arguments: {min_value: 1, max_value: 4}

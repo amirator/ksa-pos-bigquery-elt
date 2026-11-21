@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: vw_weekly_kpis
+    description: "Weekly national KPIs for dashboards (Looker Studio / Tableau / Power BI can read this view)."
+    columns:
+      - name: week_start
+        data_tests: [unique, not_null]
+      - name: avg_ticket_sar
+        data_tests:
+          - value_between: {arguments: {min_value: 20, max_value: 200}}
+  - name: vw_yearly_avg_ticket
+    columns:
+      - name: year
+        data_tests: [unique, not_null]
+  - name: vw_city_share
+    data_tests:
+      - unique_combination_of_columns:
+          arguments: {combination: [city_name, year]}
+    columns:
+      - name: share_pct
+        data_tests:
+          - value_between: {arguments: {min_value: 0, max_value: 100}}
+  - name: vw_ramadan_eid_lift
+    columns:
+      - name: year
+        data_tests: [unique, not_null]
+      - name: peak_week_index
+        data_tests:
+          - value_between: {arguments: {min_value: 80, max_value: 250}}
+  - name: vw_latest_vs_prior_year
+    columns:
+      - name: weeks
+        data_tests:
+          - value_between: {arguments: {min_value: 1, max_value: 53}}
+
+exposures:
+  - name: readme_charts_and_kpis
+    label: README charts and kpis.json
+    type: analysis
+    maturity: medium
+    url: https://github.com/amirator/ksa-pos-bigquery-elt#key-findings
+    description: "outputs/*.csv, outputs/kpis.json and docs/img/*.png are exported from these views by src/pos_elt/export.py."
+    depends_on:
+      - ref('vw_weekly_kpis')
+      - ref('vw_yearly_avg_ticket')
+      - ref('vw_city_share')
+      - ref('vw_ramadan_eid_lift')
+      - ref('vw_latest_vs_prior_year')
+    owner:
+      name: Mohammad Amir Khan

@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+warehouse/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+logs/
+outputs/bq_emulator/
+outputs/bigquery/
+*.json.key
+*-key.json
+gcp-sa*.json
+.env

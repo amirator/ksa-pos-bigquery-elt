@@ -1,0 +1,31 @@
+# Project-local profiles (pattern from dbt-labs/jaffle_shop_duckdb). Pick a target with DBT_TARGET.
+ksa_pos:
+  target: "{{ env_var('DBT_TARGET', 'duckdb') }}"
+  outputs:
+    duckdb:              # local, no account: runs everywhere (default)
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '../warehouse/ksa_pos.duckdb') }}"
+      schema: main
+      threads: 4
+    bigquery:            # real Google BigQuery (sandbox / free tier). Needs a service-account key.
+      type: bigquery
+      method: service-account
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS', '/missing-key.json') }}"
+      project: "{{ env_var('BQ_PROJECT', 'set-BQ_PROJECT') }}"
+      dataset: pos_default
+      location: "{{ env_var('BQ_LOCATION', 'US') }}"
+      threads: 4
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      priority: interactive
+    bq_emulator:         # goccy/bigquery-emulator on localhost: BigQuery API + GoogleSQL, no account
+      type: bigquery
+      method: oauth-secrets
+      token: "local-emulator-dummy-token"
+      project: "{{ env_var('BQ_PROJECT', 'ksa-pos-local') }}"
+      dataset: pos_default
+      location: "{{ env_var('BQ_LOCATION', 'US') }}"
+      api_endpoint: "{{ env_var('BQ_API_ENDPOINT', 'http://localhost:9050') }}"
+      threads: 1
+      job_execution_timeout_seconds: 300
+      priority: interactive

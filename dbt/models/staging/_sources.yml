@@ -1,0 +1,23 @@
+version: 2
+sources:
+  - name: pos_raw
+    schema: "{{ env_var('RAW_DATASET', 'pos_raw') }}"
+    description: "Raw tables written by the Python loader (src/pos_elt/load.py) with load jobs."
+    config:
+      loaded_at_field: _loaded_at
+      freshness:
+        warn_after: {count: 8, period: day}     # weekly refresh
+        error_after: {count: 35, period: day}
+    tables:
+      - name: sama_pos_a
+        description: "SAMA weekly POS, release A (May 2020 - Jul 2025), long format, one row per indicator."
+      - name: sama_pos_b
+        description: "SAMA weekly POS, release B (Jun 2025 onwards, new taxonomy), long format."
+      - name: hijri_calendar
+        description: "Sunday week starts 2020-2027 with Umm al-Qura Ramadan / Eid flags (built in Python)."
+        config:
+          freshness: null
+      - name: load_log
+        description: "Append-only log of every load attempt, including skips and failures."
+        config:
+          freshness: null

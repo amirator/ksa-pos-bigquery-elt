@@ -1,0 +1,108 @@
+name: elt
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"   # weekly refresh: Mondays 04:00 UTC (07:00 Riyadh); SAMA publishes weekly
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: src
+  # scheduled runs re-download SAMA data; pushes/PRs use the committed snapshot (deterministic)
+  PIPELINE_FLAGS: ${{ github.event_name == 'schedule' && '--refresh' || '--offline' }}
+
+jobs:
+  local-duckdb:
+    name: Local warehouse (DuckDB) + full tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13", cache: pip}
+      - run: pip install -r requirements.txt
+      - name: "ELT pipeline -> DuckDB (load, dbt build of 10 models + 39 tests, freshness, export)"
+        run: python -m pos_elt.pipeline $PIPELINE_FLAGS
+      - name: pytest
+        # on scheduled refreshes new SAMA weeks legitimately change latest-period KPIs, so the
+        # pinned-number tests (test_outputs.py) run on pushes/PRs only
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            python -m pytest -q --ignore=tests/test_outputs.py
+          else
+            python -m pytest -q
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: outputs-duckdb
+          path: |
+            outputs/
+            docs/img/
+
+  bigquery-emulator:
+    name: BigQuery dialect on goccy/bigquery-emulator + parity with DuckDB
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13", cache: pip}
+      - run: pip install -r requirements.txt
+      - name: Install and start bigquery-emulator v0.8.1 (checksum-verified)
+        run: |
+          curl -sSL -o bqe.tgz https://github.com/goccy/bigquery-emulator/releases/download/v0.8.1/bigquery-emulator_v0.8.1_linux_amd64.tar.gz
+          echo "8dbe6d3ebe3e8963523bada4a88a012d6a1bbc2ea779fbdc2e31d2e8c8c51c36  bqe.tgz" | sha256sum -c -
+          tar xzf bqe.tgz bigquery-emulator
+          nohup ./bigquery-emulator --project=ksa-pos-local --port=9050 --grpc-port=9060 > emulator.log 2>&1 &
+          for i in $(seq 1 30); do curl -s localhost:9050 >/dev/null && break; sleep 1; done
+      - name: ELT pipeline -> DuckDB (reference for parity)
+        run: python -m pos_elt.pipeline $PIPELINE_FLAGS
+      - name: ELT pipeline -> BigQuery emulator (same loader + same dbt models, BigQuery SQL)
+        run: python -m pos_elt.pipeline --warehouse bq-emulator --offline
+      - name: Parity test (5 views identical on both engines)
+        run: python -m pytest -q tests/test_bq_parity.py
+      - if: always()
+        run: tail -n 50 emulator.log
+
+  check-secret:
+    name: Is the BigQuery key configured?
+    runs-on: ubuntu-latest
+    outputs:
+      has_key: ${{ steps.c.outputs.has_key }}
+    steps:
+      - id: c
+        env:
+          KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then echo "has_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Cloud load skipped::Repository secret GCP_SA_KEY is not set, so the real BigQuery load was skipped. See README 'Go live on BigQuery'."
+          fi
+
+  bigquery-cloud:
+    name: Load + build on real Google BigQuery
+    needs: [local-duckdb, check-secret]
+    if: needs.check-secret.outputs.has_key == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13", cache: pip}
+      - run: pip install -r requirements.txt
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: ELT pipeline -> BigQuery
+        env:
+          BQ_PROJECT: ${{ vars.BQ_PROJECT || steps.auth.outputs.project_id }}
+          BQ_LOCATION: ${{ vars.BQ_LOCATION || 'US' }}
+        run: python -m pos_elt.pipeline --warehouse bigquery $PIPELINE_FLAGS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: outputs-bigquery
+          path: outputs/bigquery/

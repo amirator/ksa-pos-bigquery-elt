@@ -1,0 +1,46 @@
+version: 2
+models:
+  - name: dim_city
+    columns:
+      - name: city_key
+        data_tests: [unique, not_null]
+      - name: city_name
+        data_tests: [unique, not_null]
+  - name: dim_date
+    columns:
+      - name: week_start
+        data_tests: [unique, not_null, is_sunday]
+  - name: fct_pos_national_weekly
+    description: "One row per week, KSA total POS value (SAR thousands) and count (thousands)."
+    columns:
+      - name: week_start
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_date'), field: week_start}
+              config: {tags: [heavy_join]}
+      - name: txn_value_k_sar
+        data_tests:
+          - not_null
+          - value_between: {arguments: {min_value: 1000000, max_value: 50000000}}
+      - name: txn_count_k
+        data_tests:
+          - not_null
+          - value_between: {arguments: {min_value: 1000, max_value: 1000000}}
+  - name: fct_pos_city_weekly
+    data_tests:
+      - unique_combination_of_columns:
+          arguments: {combination: [week_start, city_key]}
+    columns:
+      - name: city_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_city'), field: city_key}
+              config: {tags: [heavy_join]}
+      - name: week_start
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_date'), field: week_start}
+              config: {tags: [heavy_join]}

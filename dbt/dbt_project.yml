@@ -1,0 +1,23 @@
+name: ksa_pos
+version: "1.0.0"
+config-version: 2
+profile: ksa_pos
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+# BigQuery sandbox has no DML, so only `view` and `table` (CREATE OR REPLACE ... AS) are used.
+models:
+  ksa_pos:
+    staging:
+      +materialized: table   # materialised once, reused by marts + tests
+      +schema: pos_staging
+    marts:
+      +materialized: table
+      +schema: pos_marts
+    reporting:
+      +materialized: view
+      +schema: pos_reporting

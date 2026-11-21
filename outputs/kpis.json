@@ -1,0 +1,64 @@
+{
+  "coverage": {
+    "first_week": "2020-05-10",
+    "last_week": "2026-03-22",
+    "weeks": 307,
+    "weeks_from_release_b": 37,
+    "full_years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ]
+  },
+  "raw_rows": {
+    "sama_pos_a": 31262,
+    "sama_pos_b": 14168
+  },
+  "yearly": {
+    "first_full_year": 2021,
+    "last_full_year": 2025,
+    "avg_weekly_value_bn_sar_first": 9.08,
+    "avg_weekly_value_bn_sar_last": 13.57,
+    "value_growth_pct": 49.3,
+    "txn_growth_pct": 123.1,
+    "avg_ticket_sar_first": 91.4,
+    "avg_ticket_sar_last": 61.2,
+    "avg_ticket_change_pct": -33.1,
+    "value_yoy_pct_by_year": {
+      "2022": 18.0,
+      "2023": 9.8,
+      "2024": 8.6,
+      "2025": 6.2
+    }
+  },
+  "city_share": {
+    "riyadh_first": 31.0,
+    "riyadh_last": 34.6,
+    "jeddah_first": 16.1,
+    "jeddah_last": 14.0
+  },
+  "ramadan_eid": {
+    "years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "peak_index_min": 104.0,
+    "peak_index_median": 116.0,
+    "peak_index_max": 145.0,
+    "post_eid_index_min": 73.0,
+    "post_eid_index_max": 89.0
+  },
+  "latest_ytd": {
+    "from": "2026-01-04",
+    "to": "2026-03-22",
+    "weeks": 12,
+    "value_yoy_pct": 3.4,
+    "txn_yoy_pct": 9.3
+  }
+}
