@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      force_load:
+        description: "Reload raw tables even if the SAMA files are unchanged"
+        type: boolean
+        default: false
   schedule:
     - cron: "0 4 * * 1"   # weekly refresh: Mondays 04:00 UTC (07:00 Riyadh); SAMA publishes weekly
 
@@ -103,7 +108,7 @@ jobs:
         env:
           BQ_PROJECT: ${{ vars.BQ_PROJECT || steps.auth.outputs.project_id }}
           BQ_LOCATION: ${{ vars.BQ_LOCATION || 'US' }}
-        run: python -m pos_elt.pipeline --warehouse bigquery --offline
+        run: python -m pos_elt.pipeline --warehouse bigquery --offline ${{ inputs.force_load && '--force-load' || '' }}
       - name: Evidence (row counts, sample rows, dataset location and expiry via the BigQuery API)
         env:
           BQ_PROJECT: ${{ vars.BQ_PROJECT || steps.auth.outputs.project_id }}

@@ -1,0 +1,135 @@
+# Real log of the 'Load + build on real Google BigQuery' job, workflow_dispatch run 44907010402
+# https://github.com/amirator/ksa-pos-bigquery-elt/actions/runs/44907010402  (timestamps UTC)
+[pipeline] warehouse=bigquery dbt_target=bigquery project=ksa-pos-elt
+[load] sama_pos_a       unchanged (sha256 527b766d15...), skipped; expiry extended to 2027-01-19
+[load] sama_pos_b       unchanged (sha256 0e4f64b4db...), skipped; expiry extended to 2027-01-19
+[load] hijri_calendar       417 rows -> pos_raw.hijri_calendar
+13:06:42  Running with dbt=1.12.7
+13:06:43  Registered adapter: bigquery=1.12.4
+13:06:43  Unable to do partial parsing because saved manifest not found. Starting full parse.
+13:06:45  Found 10 models, 39 data tests, 4 sources, 1 exposure, 577 macros
+13:06:45  
+13:06:45  Concurrency: 4 threads (target='bigquery')
+13:06:45  
+13:06:46  1 of 50 START sql table model pos_marts.dim_city ............................... [RUN]
+13:06:46  2 of 50 START sql table model pos_staging.stg_sama_pos ......................... [RUN]
+13:06:49  2 of 50 OK created sql table model pos_staging.stg_sama_pos .................... [CREATE TABLE (11.4k rows, 3.3 MiB processed) in 2.42s]
+13:06:49  3 of 50 START test accepted_values_stg_sama_pos_source__A__B ................... [RUN]
+13:06:49  5 of 50 START test assert_release_overlap_reconciles ........................... [RUN]
+13:06:49  4 of 50 START test assert_overlap_exists ....................................... [RUN]
+13:06:49  1 of 50 OK created sql table model pos_marts.dim_city .......................... [CREATE TABLE (10.0 rows, 0 processed) in 2.71s]
+13:06:49  6 of 50 START test is_sunday_stg_sama_pos_week_start ........................... [RUN]
+13:06:50  3 of 50 PASS accepted_values_stg_sama_pos_source__A__B ......................... [PASS in 1.19s]
+13:06:50  7 of 50 START test not_null_stg_sama_pos_week_start ............................ [RUN]
+13:06:50  4 of 50 PASS assert_overlap_exists ............................................. [PASS in 1.37s]
+13:06:50  8 of 50 START test unique_combination_of_columns_stg_sama_pos_source__week_start__sector__city  [RUN]
+13:06:50  5 of 50 PASS assert_release_overlap_reconciles ................................. [PASS in 1.43s]
+13:06:50  9 of 50 START test value_between_stg_sama_pos_source_rows__4__1 ................ [RUN]
+13:06:50  6 of 50 PASS is_sunday_stg_sama_pos_week_start ................................. [PASS in 1.21s]
+13:06:50  10 of 50 START test not_null_dim_city_city_key ................................. [RUN]
+13:06:51  7 of 50 PASS not_null_stg_sama_pos_week_start .................................. [PASS in 1.11s]
+13:06:51  11 of 50 START test not_null_dim_city_city_name ................................ [RUN]
+13:06:51  10 of 50 PASS not_null_dim_city_city_key ....................................... [PASS in 1.00s]
+13:06:51  12 of 50 START test unique_dim_city_city_key ................................... [RUN]
+13:06:51  9 of 50 PASS value_between_stg_sama_pos_source_rows__4__1 ...................... [PASS in 1.16s]
+13:06:51  13 of 50 START test unique_dim_city_city_name .................................. [RUN]
+13:06:51  8 of 50 PASS unique_combination_of_columns_stg_sama_pos_source__week_start__sector__city  [PASS in 1.28s]
+13:06:51  14 of 50 START sql table model pos_marts.dim_date .............................. [RUN]
+13:06:52  11 of 50 PASS not_null_dim_city_city_name ...................................... [PASS in 1.03s]
+13:06:52  15 of 50 START sql table model pos_marts.fct_pos_national_weekly ............... [RUN]
+13:06:52  12 of 50 PASS unique_dim_city_city_key ......................................... [PASS in 1.06s]
+13:06:52  13 of 50 PASS unique_dim_city_city_name ........................................ [PASS in 1.08s]
+13:06:52  16 of 50 START sql table model pos_marts.fct_pos_city_weekly ................... [RUN]
+13:06:54  14 of 50 OK created sql table model pos_marts.dim_date ......................... [CREATE TABLE (307.0 rows, 117.3 KiB processed) in 2.44s]
+13:06:54  17 of 50 START test is_sunday_dim_date_week_start .............................. [RUN]
+13:06:54  18 of 50 START test not_null_dim_date_week_start ............................... [RUN]
+13:06:54  15 of 50 OK created sql table model pos_marts.fct_pos_national_weekly .......... [CREATE TABLE (307.0 rows, 594.8 KiB processed) in 2.23s]
+13:06:54  19 of 50 START test unique_dim_date_week_start ................................. [RUN]
+13:06:55  17 of 50 PASS is_sunday_dim_date_week_start .................................... [PASS in 1.01s]
+13:06:55  20 of 50 START test assert_national_fact_reconciles_to_raw ..................... [RUN]
+13:06:55  16 of 50 OK created sql table model pos_marts.fct_pos_city_weekly .............. [CREATE TABLE (3.1k rows, 594.9 KiB processed) in 2.55s]
+13:06:55  21 of 50 START test assert_no_missing_weeks .................................... [RUN]
+13:06:55  18 of 50 PASS not_null_dim_date_week_start ..................................... [PASS in 1.45s]
+13:06:55  22 of 50 START test not_null_fct_pos_national_weekly_txn_count_k ............... [RUN]
+13:06:55  19 of 50 PASS unique_dim_date_week_start ....................................... [PASS in 1.05s]
+13:06:55  23 of 50 START test not_null_fct_pos_national_weekly_txn_value_k_sar ........... [RUN]
+13:06:56  21 of 50 PASS assert_no_missing_weeks .......................................... [PASS in 0.94s]
+13:06:56  24 of 50 START test not_null_fct_pos_national_weekly_week_start ................ [RUN]
+13:06:56  20 of 50 PASS assert_national_fact_reconciles_to_raw ........................... [PASS in 1.10s]
+13:06:56  25 of 50 START test relationships_fct_pos_national_weekly_week_start__week_start__ref_dim_date_  [RUN]
+13:06:56  23 of 50 PASS not_null_fct_pos_national_weekly_txn_value_k_sar ................. [PASS in 1.01s]
+13:06:56  26 of 50 START test unique_fct_pos_national_weekly_week_start .................. [RUN]
+13:06:56  22 of 50 PASS not_null_fct_pos_national_weekly_txn_count_k ..................... [PASS in 1.10s]
+13:06:56  27 of 50 START test value_between_fct_pos_national_weekly_txn_count_k__1000000__1000  [RUN]
+13:06:57  24 of 50 PASS not_null_fct_pos_national_weekly_week_start ...................... [PASS in 0.96s]
+13:06:57  28 of 50 START test value_between_fct_pos_national_weekly_txn_value_k_sar__50000000__1000000  [RUN]
+13:06:57  25 of 50 PASS relationships_fct_pos_national_weekly_week_start__week_start__ref_dim_date_  [PASS in 1.14s]
+13:06:57  29 of 50 START test not_null_fct_pos_city_weekly_city_key ...................... [RUN]
+13:06:58  26 of 50 PASS unique_fct_pos_national_weekly_week_start ........................ [PASS in 1.09s]
+13:06:58  30 of 50 START test relationships_fct_pos_city_weekly_city_key__city_key__ref_dim_city_  [RUN]
+13:06:58  27 of 50 PASS value_between_fct_pos_national_weekly_txn_count_k__1000000__1000 . [PASS in 1.14s]
+13:06:58  31 of 50 START test relationships_fct_pos_city_weekly_week_start__week_start__ref_dim_date_  [RUN]
+13:06:58  28 of 50 PASS value_between_fct_pos_national_weekly_txn_value_k_sar__50000000__1000000  [PASS in 1.40s]
+13:06:58  32 of 50 START test unique_combination_of_columns_fct_pos_city_weekly_week_start__city_key  [RUN]
+13:06:58  29 of 50 PASS not_null_fct_pos_city_weekly_city_key ............................ [PASS in 1.31s]
+13:06:58  33 of 50 START sql view model pos_reporting.vw_latest_vs_prior_year ............ [RUN]
+13:06:59  30 of 50 PASS relationships_fct_pos_city_weekly_city_key__city_key__ref_dim_city_  [PASS in 1.05s]
+13:06:59  34 of 50 START sql view model pos_reporting.vw_ramadan_eid_lift ................ [RUN]
+13:06:59  31 of 50 PASS relationships_fct_pos_city_weekly_week_start__week_start__ref_dim_date_  [PASS in 1.06s]
+13:06:59  35 of 50 START sql view model pos_reporting.vw_weekly_kpis ..................... [RUN]
+13:06:59  33 of 50 OK created sql view model pos_reporting.vw_latest_vs_prior_year ....... [CREATE VIEW (0 processed) in 0.85s]
+13:06:59  36 of 50 START sql view model pos_reporting.vw_yearly_avg_ticket ............... [RUN]
+13:06:59  32 of 50 PASS unique_combination_of_columns_fct_pos_city_weekly_week_start__city_key  [PASS in 1.06s]
+13:06:59  37 of 50 START test value_between_vw_latest_vs_prior_year_weeks__53__1 ......... [RUN]
+13:06:59  34 of 50 OK created sql view model pos_reporting.vw_ramadan_eid_lift ........... [CREATE VIEW (0 processed) in 0.81s]
+13:06:59  38 of 50 START sql view model pos_reporting.vw_city_share ...................... [RUN]
+13:07:00  35 of 50 OK created sql view model pos_reporting.vw_weekly_kpis ................ [CREATE VIEW (0 processed) in 0.80s]
+13:07:00  39 of 50 START test not_null_vw_ramadan_eid_lift_year .......................... [RUN]
+13:07:00  38 of 50 OK created sql view model pos_reporting.vw_city_share ................. [CREATE VIEW (0 processed) in 0.85s]
+13:07:00  40 of 50 START test unique_vw_ramadan_eid_lift_year ............................ [RUN]
+13:07:00  36 of 50 OK created sql view model pos_reporting.vw_yearly_avg_ticket .......... [CREATE VIEW (0 processed) in 0.99s]
+13:07:00  41 of 50 START test value_between_vw_ramadan_eid_lift_peak_week_index__250__80 . [RUN]
+13:07:01  37 of 50 PASS value_between_vw_latest_vs_prior_year_weeks__53__1 ............... [PASS in 1.13s]
+13:07:01  42 of 50 START test not_null_vw_weekly_kpis_week_start ......................... [RUN]
+13:07:01  39 of 50 PASS not_null_vw_ramadan_eid_lift_year ................................ [PASS in 1.06s]
+13:07:01  43 of 50 START test unique_vw_weekly_kpis_week_start ........................... [RUN]
+13:07:01  41 of 50 PASS value_between_vw_ramadan_eid_lift_peak_week_index__250__80 ....... [PASS in 1.00s]
+13:07:01  44 of 50 START test value_between_vw_weekly_kpis_avg_ticket_sar__200__20 ....... [RUN]
+13:07:01  40 of 50 PASS unique_vw_ramadan_eid_lift_year .................................. [PASS in 1.17s]
+13:07:01  45 of 50 START test assert_city_shares_below_national .......................... [RUN]
+13:07:02  42 of 50 PASS not_null_vw_weekly_kpis_week_start ............................... [PASS in 1.23s]
+13:07:02  46 of 50 START test unique_combination_of_columns_vw_city_share_city_name__year  [RUN]
+13:07:02  43 of 50 PASS unique_vw_weekly_kpis_week_start ................................. [PASS in 1.23s]
+13:07:02  47 of 50 START test value_between_vw_city_share_share_pct__100__0 .............. [RUN]
+13:07:03  44 of 50 PASS value_between_vw_weekly_kpis_avg_ticket_sar__200__20 ............. [PASS in 1.25s]
+13:07:03  48 of 50 NO-OP exposure readme_charts_and_kpis ................................. [NO-OP in 0.00s]
+13:07:03  49 of 50 START test not_null_vw_yearly_avg_ticket_year ......................... [RUN]
+13:07:03  45 of 50 PASS assert_city_shares_below_national ................................ [PASS in 1.42s]
+13:07:03  50 of 50 START test unique_vw_yearly_avg_ticket_year ........................... [RUN]
+13:07:03  46 of 50 PASS unique_combination_of_columns_vw_city_share_city_name__year ...... [PASS in 1.16s]
+13:07:03  47 of 50 PASS value_between_vw_city_share_share_pct__100__0 .................... [PASS in 1.10s]
+13:07:04  49 of 50 PASS not_null_vw_yearly_avg_ticket_year ............................... [PASS in 1.05s]
+13:07:04  50 of 50 PASS unique_vw_yearly_avg_ticket_year ................................. [PASS in 0.93s]
+13:07:04  
+13:07:04  Finished running 1 exposure, 5 table models, 39 data tests, 5 view models in 0 hours 0 minutes and 18.41 seconds (18.41s).
+13:07:04  
+13:07:04  Completed successfully
+13:07:04  
+13:07:04  Done. PASS=49 WARN=0 ERROR=0 SKIP=0 NO-OP=1 REUSED=0 TOTAL=50
+13:07:04  Running with dbt=1.12.7
+13:07:04  Registered adapter: bigquery=1.12.4
+13:07:04  Found 10 models, 39 data tests, 4 sources, 1 exposure, 577 macros
+13:07:04  
+13:07:04  Concurrency: 4 threads (target='bigquery')
+13:07:04  
+13:07:05  Pulling freshness from warehouse metadata tables for 0 sources
+13:07:05  1 of 2 START freshness of pos_raw.sama_pos_a ................................... [RUN]
+13:07:05  2 of 2 START freshness of pos_raw.sama_pos_b ................................... [RUN]
+13:07:06  1 of 2 PASS freshness of pos_raw.sama_pos_a .................................... [PASS in 1.02s]
+13:07:06  2 of 2 PASS freshness of pos_raw.sama_pos_b .................................... [PASS in 1.49s]
+13:07:06  
+13:07:06  Finished running 2 sources in 0 hours 0 minutes and 2.00 seconds (2.00s).
+13:07:06  Done.
+[pipeline] exported 5 views -> outputs/bigquery
+[pipeline] DONE
+5 passed, 5 skipped in 0.37s
