@@ -38,6 +38,10 @@ def main(argv: list[str] | None = None) -> int:
 
     wh = get_warehouse(s)
     _, load_ok = load_all(wh, force=args.force_load)
+    if not load_ok:
+        print("[pipeline] load failed (see pos_raw.load_log); stopping before dbt")
+        wh.close()
+        return 1
     raw_rows = {
         meta["raw_table"]: int(wh.query_df(f"SELECT count(*) AS n FROM {wh.fq(s.raw_dataset, meta['raw_table'])}").iloc[0, 0])
         for meta in DATASETS.values()

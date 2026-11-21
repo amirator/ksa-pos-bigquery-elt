@@ -118,3 +118,8 @@ def test_loader_logs_failure_and_continues(tiny_env):
     assert statuses == {"pos_a": "failed", "pos_b": "loaded", "calendar": "loaded"}
     logged = wh.query_df('select status from "pos_raw"."load_log" where source_key = \'pos_a\'')
     assert logged.status.tolist() == ["failed"]
+
+
+def test_keep_alive_is_noop_locally(tiny_env):
+    _, wh = tiny_env
+    assert wh.keep_alive("sama_pos_a") is None

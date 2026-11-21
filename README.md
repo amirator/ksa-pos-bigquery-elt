@@ -56,7 +56,7 @@ KAPSARC public API ──► Python loader ──────────► raw
   * the national fact reconciles to the raw KSA-total rows to within SAR 1 thousand;
   * the weekly series has no missing weeks;
   * named cities never exceed 100% of the national total.
-* **Source freshness** on `_loaded_at` (warn after 8 days, error after 35).
+* **Source freshness** on `loaded_at` (warn after 8 days, error after 35).
 * **pytest**: adapter switching, Hijri calendar flags, CSV parsing with BOM and unknown-indicator rejection, loader hash-skip / reload / failure logging, sandbox no-DML guard, CI gating, README-vs-`kpis.json` drift test, and a **cross-repo reconciliation**: the KPIs must equal those published by [ksa-pos-spending-dashboard](https://github.com/amirator/ksa-pos-spending-dashboard), which built the same numbers with hand-written DuckDB SQL.
 * **BigQuery parity (CI)**: the `bigquery-emulator` job runs the identical pipeline against [goccy/bigquery-emulator](https://github.com/goccy/bigquery-emulator) v0.8.1 (checksum-verified) and asserts all 5 views equal the DuckDB views. Real log: [`docs/run_logs/bq_emulator_run.txt`](docs/run_logs/bq_emulator_run.txt).
 

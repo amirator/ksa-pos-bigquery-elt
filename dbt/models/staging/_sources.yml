@@ -4,7 +4,7 @@ sources:
     schema: "{{ env_var('RAW_DATASET', 'pos_raw') }}"
     description: "Raw tables written by the Python loader (src/pos_elt/load.py) with load jobs."
     config:
-      loaded_at_field: _loaded_at
+      loaded_at_field: loaded_at
       freshness:
         warn_after: {count: 8, period: day}     # weekly refresh
         error_after: {count: 35, period: day}

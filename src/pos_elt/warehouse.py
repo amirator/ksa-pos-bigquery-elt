@@ -23,8 +23,8 @@ RAW_POS_SCHEMA = {
     "sector_raw": "STRING",
     "city_raw": "STRING",
     "value": "FLOAT",
-    "_file_sha256": "STRING",
-    "_loaded_at": "TIMESTAMP",
+    "src_file_sha256": "STRING",
+    "loaded_at": "TIMESTAMP",
 }
 CALENDAR_SCHEMA = {
     "week_start": "DATE",
@@ -91,6 +91,10 @@ class Warehouse(ABC):
             "ORDER BY finished_at DESC LIMIT 1"
         )
         return None if df.empty else str(df.iloc[0, 0])
+
+    def keep_alive(self, table: str) -> str | None:
+        """Push back a table's expiry if the warehouse expires tables. No-op locally."""
+        return None
 
     def close(self) -> None:  # pragma: no cover - trivial
         pass
@@ -228,6 +232,20 @@ class BigQueryWarehouse(Warehouse):
             job = self.client.load_table_from_dataframe(out, f"{self.project}.{self.raw}.{table}", job_config=cfg)
         job.result()
         return len(out)
+
+    def keep_alive(self, table: str) -> str | None:
+        """BigQuery sandbox: every table expires 60 days after creation and the expiry cannot be
+        set beyond 60 days without billing (tested: HTTP 403). Tables that are not re-created
+        (raw tables skipped as unchanged, the append-only load_log) get their expiry pushed
+        back to now + 59 days on each run, so the weekly refresh keeps them alive."""
+        from datetime import datetime, timedelta, timezone
+
+        t = self.client.get_table(f"{self.project}.{self.raw}.{table}")
+        if t.expires is None:  # billing-enabled project: nothing expires
+            return None
+        t.expires = datetime.now(timezone.utc) + timedelta(days=59)
+        self.client.update_table(t, ["expires"])
+        return t.expires.strftime("%Y-%m-%d")
 
     def query_df(self, sql: str) -> pd.DataFrame:
         rows = self.client.query(sql).result()

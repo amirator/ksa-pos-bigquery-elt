@@ -39,8 +39,8 @@ def parse_extract(path, source_code: str, sha: str, loaded_at: datetime) -> pd.D
             "sector_raw": df["sectors"].str.strip(),
             "city_raw": df["city"].str.strip(),
             "value": pd.to_numeric(df["value"], errors="coerce").astype("float64"),
-            "_file_sha256": sha,
-            "_loaded_at": loaded_at,
+            "src_file_sha256": sha,
+            "loaded_at": loaded_at,
         }
     )
     return out.sort_values(["starting_date", "indicator", "sector_raw", "city_raw"], kind="stable").reset_index(drop=True)
@@ -68,9 +68,12 @@ def load_all(wh: Warehouse, force: bool = False) -> tuple[list[dict], bool]:
         try:
             sha = file_sha256(path)
             if not force and sha == wh.last_successful_sha(key) and wh.table_exists(table):
+                exp = wh.keep_alive(table)
                 log.append(_log_row(run_id, key, table, sha, 0, "skipped_unchanged",
-                                    "file hash unchanged since last load", wh.kind, started))
-                print(f"[load] {table:<16} unchanged (sha256 {sha[:10]}...), skipped")
+                                    "file hash unchanged since last load"
+                                    + (f"; expiry extended to {exp}" if exp else ""), wh.kind, started))
+                print(f"[load] {table:<16} unchanged (sha256 {sha[:10]}...), skipped"
+                      + (f"; expiry extended to {exp}" if exp else ""))
                 continue
             df = parse_extract(path, meta["source_code"], sha, started)
             n = wh.load_dataframe(table, df, RAW_POS_SCHEMA, mode="truncate")
@@ -89,4 +92,5 @@ def load_all(wh: Warehouse, force: bool = False) -> tuple[list[dict], bool]:
     print(f"[load] {'hijri_calendar':<16} {n:>7,} rows -> {wh.raw}.hijri_calendar")
 
     wh.load_dataframe("load_log", pd.DataFrame(log), LOAD_LOG_SCHEMA, mode="append")
+    wh.keep_alive("load_log")
     return log, ok
