@@ -15,18 +15,18 @@ def draw_lineage(manifest_path: Path, out: Path) -> Path:
     m = json.loads(manifest_path.read_text())
     g = nx.DiGraph()
     kinds = {}
-    for uid, s in m["sources"].items():
+    for uid, s in sorted(m["sources"].items()):
         kinds[uid] = "source"
         g.add_node(uid, label=f"{s['source_name']}.{s['name']}")
-    for uid, n in m["nodes"].items():
+    for uid, n in sorted(m["nodes"].items()):
         if n["resource_type"] != "model":
             continue
         kinds[uid] = n["config"]["materialized"]
         g.add_node(uid, label=n["name"])
-        for dep in n["depends_on"]["nodes"]:
+        for dep in sorted(n["depends_on"]["nodes"]):
             if dep in kinds or dep.startswith(("source.", "model.")):
                 g.add_edge(dep, uid)
-    for uid, e in m.get("exposures", {}).items():
+    for uid, e in sorted(m.get("exposures", {}).items()):
         kinds[uid] = "exposure"
         g.add_node(uid, label=f"exposure: {e['name']}")
         for dep in e["depends_on"]["nodes"]:

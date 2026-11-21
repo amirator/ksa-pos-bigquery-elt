@@ -21,8 +21,8 @@ jobs:
     name: Local warehouse (DuckDB) + full tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with: {python-version: "3.13", cache: pip}
       - run: pip install -r requirements.txt
       - name: "ELT pipeline -> DuckDB (load, dbt build of 10 models + 39 tests, freshness, export)"
@@ -36,7 +36,7 @@ jobs:
           else
             python -m pytest -q
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: outputs-duckdb
           path: |
@@ -47,8 +47,8 @@ jobs:
     name: BigQuery dialect on goccy/bigquery-emulator + parity with DuckDB
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with: {python-version: "3.13", cache: pip}
       - run: pip install -r requirements.txt
       - name: Install and start bigquery-emulator v0.8.1 (checksum-verified)
@@ -89,8 +89,8 @@ jobs:
     if: needs.check-secret.outputs.has_key == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with: {python-version: "3.13", cache: pip}
       - run: pip install -r requirements.txt
       - id: auth
@@ -102,7 +102,7 @@ jobs:
           BQ_PROJECT: ${{ vars.BQ_PROJECT || steps.auth.outputs.project_id }}
           BQ_LOCATION: ${{ vars.BQ_LOCATION || 'US' }}
         run: python -m pos_elt.pipeline --warehouse bigquery $PIPELINE_FLAGS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: outputs-bigquery
           path: outputs/bigquery/
